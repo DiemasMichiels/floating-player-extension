@@ -1,0 +1,8 @@
+.videoPage {
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+    box-sizing: border-box;
+  }
+}

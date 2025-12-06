@@ -1,0 +1,38 @@
+{
+  "name": "floating-player",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-draggable": "^4.4.6",
+    "@tabler/icons-react": "3.35.0",
+    "@radix-ui/react-dropdown-menu": "^2.1.15",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.2.1",
+    "@types/chrome": "^0.0.313",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-import-resolver-typescript": "^4.3.2",
+    "eslint-plugin-import-x": "^4.10.2",
+    "eslint-plugin-prettier": "^5.2.6",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "@vitejs/plugin-react": "^4.3.4",
+    "globals": "^15.15.0",
+    "sass-embedded": "^1.86.3",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
+  }
+}
