@@ -6,6 +6,7 @@ import {
   DraggableWrapperRef,
 } from '@/draggableWrapper/DraggableWrapper'
 import { useVideoStore } from '@/useVideoStore'
+import { useVideoListener } from '@/useVideoListener'
 import { Controls } from '../controls/Controls'
 import styles from './FloatingVideo.module.scss'
 
@@ -21,6 +22,9 @@ export const FloatingVideo = ({ videoElement }: FloatingVideoProps) => {
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const draggableRef = useRef<DraggableWrapperRef>(null)
   const hideControlsTimeoutRef = useRef<number | null>(null)
+
+  // Use the video listener hook to sync state
+  useVideoListener(videoElement)
 
   const { isBuffering, isPlaying } = useVideoStore(
     useShallow((state) => ({
