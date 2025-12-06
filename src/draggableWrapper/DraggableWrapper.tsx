@@ -282,7 +282,7 @@ export const DraggableWrapper = forwardRef<
     ])
 
     useEffect(() => {
-      let timeoutId: number
+      let timeoutId: NodeJS.Timeout
 
       const handleWindowResizeAndAspectRatioChange = () => {
         clearTimeout(timeoutId)

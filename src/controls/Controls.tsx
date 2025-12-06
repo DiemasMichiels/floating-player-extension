@@ -93,7 +93,12 @@ export const Controls = ({
   const handleMuteToggle = useCallback(() => {
     if (!videoElement) return
     videoElement.muted = !videoElement.muted
-  }, [videoElement])
+    if (!videoElement.muted) {
+      const newVolume = localVolume || 0.5
+      videoElement.volume = newVolume
+      setLocalVolume(newVolume)
+    }
+  }, [localVolume, volume])
 
   const handleTimeSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,6 +151,12 @@ export const Controls = ({
     },
     [videoElement],
   )
+
+  useEffect(() => {
+    if (!isMuted) {
+      setLocalVolume(videoElement?.volume || volume)
+    }
+  }, [volume, isMuted, videoElement?.volume])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
