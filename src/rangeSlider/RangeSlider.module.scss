@@ -1,11 +1,13 @@
-$accent-color: #a60569 !default;
+$accent-color: rgba(70, 90, 120, 1) !default;
 $thumb-height: 13px !default;
 $thumb-background: #ffffff !default;
-$thumb-shadow: 0 1px 1px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.2) !default;
+$thumb-shadow:
+  0 1px 1px rgba(0, 0, 0, 0.15),
+  0 0 0 1px rgba(0, 0, 0, 0.2) !default;
 $track-height: 5px !default;
 $track-fill-background: $accent-color !default;
 $track-background: rgba(146, 146, 146, 0.4) !default;
-$thumb-active-shadow-color: rgba(123, 2, 77, 0.7) !default;
+$thumb-active-shadow-color: rgba(70, 90, 120, 0.5) !default;
 $thumb-active-shadow-width: 3px !default;
 $thumb-line-width: 2px !default;
 $thumb-line-height: 8px !default;
@@ -26,7 +28,10 @@ $thumb-line-height: 8px !default;
   box-shadow: $thumb-shadow;
   position: relative;
   cursor: grab;
-  transition: all 0.2s ease, width 0.3s ease, border-radius 0.3s ease;
+  transition:
+    all 0.2s ease,
+    width 0.3s ease,
+    border-radius 0.3s ease;
 
   height: $thumb-line-height;
   width: $thumb-line-width;
@@ -38,7 +43,9 @@ $thumb-line-height: 8px !default;
 }
 
 @mixin range-thumb-active-style($color) {
-  box-shadow: $thumb-shadow, 0 0 0 $thumb-active-shadow-width $color;
+  box-shadow:
+    $thumb-shadow,
+    0 0 0 $thumb-active-shadow-width $color;
 }
 
 .progressContainer {

@@ -38,7 +38,7 @@
 
 .menuContent {
   min-width: 180px;
-  background: rgba(41, 11, 29, 0.95);
+  background: rgba(35, 45, 60, 0.95);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -94,7 +94,7 @@
   }
 
   &[data-highlighted] {
-    background-color: rgba(123, 2, 77, 0.6);
+    background-color: rgba(70, 90, 120, 0.6);
     color: white;
   }
 }
@@ -117,11 +117,11 @@
   transition: background-color 0.15s ease;
 
   &[data-state='open'] {
-    background-color: rgba(123, 2, 77, 0.4);
+    background-color: rgba(70, 90, 120, 0.4);
   }
 
   &[data-highlighted] {
-    background-color: rgba(123, 2, 77, 0.6);
+    background-color: rgba(70, 90, 120, 0.6);
     color: white;
   }
 
