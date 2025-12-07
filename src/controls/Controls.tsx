@@ -140,7 +140,7 @@ export const Controls = ({
         await videoElement.requestPictureInPicture()
       }
     } catch (error) {
-      console.error('Picture-in-Picture not supported:', error)
+      console.log('Picture-in-Picture not supported:', error)
     }
   }, [videoElement])
 

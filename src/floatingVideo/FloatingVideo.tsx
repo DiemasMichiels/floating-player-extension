@@ -21,7 +21,7 @@ export const FloatingVideo = ({ videoElement }: FloatingVideoProps) => {
 
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const draggableRef = useRef<DraggableWrapperRef>(null)
-  const hideControlsTimeoutRef = useRef<number | null>(null)
+  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Use the video listener hook to sync state
   useVideoListener(videoElement)

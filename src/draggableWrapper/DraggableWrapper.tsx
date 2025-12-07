@@ -98,7 +98,7 @@ export const DraggableWrapper = forwardRef<
             })
           }
         } catch (error) {
-          console.error('Error saving state:', error)
+          console.log('Error saving state:', error)
         }
       },
       [storageKey],
@@ -186,7 +186,7 @@ export const DraggableWrapper = forwardRef<
             })
           }
         } catch (error) {
-          console.error('Error loading state:', error)
+          console.log('Error loading state:', error)
         }
       }
 

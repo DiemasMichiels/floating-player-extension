@@ -73,7 +73,7 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
         )
         setTimeout(attemptFind, delay)
       } else {
-        console.error('Failed to find video player after maximum attempts')
+        console.log('Failed to find video player after maximum attempts')
         set({
           error: 'No video player found on this page',
           isSearching: false,

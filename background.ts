@@ -4,6 +4,6 @@ chrome.action.onClicked.addListener(async (tab) => {
       chrome.tabs.sendMessage(tab.id, { type: 'FLOAT_VIDEO' })
     }
   } catch (error) {
-    console.error('Error sending message:', error)
+    console.log('Error sending message:', error)
   }
 })
