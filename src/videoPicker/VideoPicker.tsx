@@ -82,6 +82,7 @@ const PickerButton = ({ element, onSelect }: PickerButtonProps) => {
 
 export const VideoPicker = ({ onSelect }: VideoPickerProps) => {
   const [mediaElements, setMediaElements] = useState<MediaElement[]>([])
+  const [hasAutoSelected, setHasAutoSelected] = useState(false)
 
   useEffect(() => {
     const findMediaElements = () => {
@@ -105,7 +106,14 @@ export const VideoPicker = ({ onSelect }: VideoPickerProps) => {
         )
       })
 
-      setMediaElements([...videos, ...iframes])
+      const elements = [...videos, ...iframes]
+      setMediaElements(elements)
+
+      // Auto-select if only one element found
+      if (elements.length === 1 && !hasAutoSelected) {
+        setHasAutoSelected(true)
+        onSelect(elements[0])
+      }
     }
 
     findMediaElements()
@@ -114,7 +122,7 @@ export const VideoPicker = ({ onSelect }: VideoPickerProps) => {
     const interval = setInterval(findMediaElements, 2000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [onSelect, hasAutoSelected])
 
   return (
     <>

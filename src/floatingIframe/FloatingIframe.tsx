@@ -11,7 +11,10 @@ type FloatingIframeProps = {
   onClose: () => void
 }
 
-export const FloatingIframe = ({ iframeElement, onClose }: FloatingIframeProps) => {
+export const FloatingIframe = ({
+  iframeElement,
+  onClose,
+}: FloatingIframeProps) => {
   const iframeContainerRef = useRef<HTMLDivElement>(null)
   const draggableRef = useRef<DraggableWrapperRef>(null)
   const originalIframeRef = useRef<{
@@ -69,7 +72,7 @@ export const FloatingIframe = ({ iframeElement, onClose }: FloatingIframeProps) 
       ref={draggableRef}
       storageKey='floating-iframe-position'
       showResizeHandle={true}
-      isVerticalAspectRatio={false}
+      defaultVertical={false}
     >
       <div
         ref={iframeContainerRef}
