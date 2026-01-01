@@ -6,7 +6,7 @@ import { IconPictureInPictureTopFilled } from '@tabler/icons-react'
 type MediaElement = HTMLVideoElement | HTMLIFrameElement
 
 type VideoPickerProps = {
-  onSelect: (element: MediaElement) => void
+  onSelect: (element: MediaElement, autoSelected?: boolean) => void
 }
 
 type PickerButtonProps = {
@@ -112,7 +112,7 @@ export const VideoPicker = ({ onSelect }: VideoPickerProps) => {
       // Auto-select if only one element found
       if (elements.length === 1 && !hasAutoSelected) {
         setHasAutoSelected(true)
-        onSelect(elements[0])
+        onSelect(elements[0], true)
       }
     }
 

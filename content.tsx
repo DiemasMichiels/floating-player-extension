@@ -9,6 +9,7 @@ let rootElement: HTMLDivElement | null = null
 let reactRoot: ReactDOM.Root | null = null
 let currentMode: 'idle' | 'picking' | 'floating' = 'idle'
 let selectedElement: MediaElement | null = null
+let wasAutoSelected = false
 
 const notifyStateChange = (isActive: boolean) => {
   chrome.runtime.sendMessage({ type: 'STATE_CHANGED', isActive })
@@ -40,19 +41,27 @@ const cleanup = () => {
   }
   currentMode = 'idle'
   selectedElement = null
+  wasAutoSelected = false
   notifyStateChange(false)
 }
 
-const handleSelect = (element: MediaElement) => {
+const handleSelect = (element: MediaElement, autoSelected = false) => {
   selectedElement = element
+  wasAutoSelected = autoSelected
   currentMode = 'floating'
   render()
 }
 
 const handleClose = () => {
-  selectedElement = null
-  currentMode = 'picking'
-  render()
+  // If it was auto-selected (single video), close completely
+  // Otherwise go back to picker
+  if (wasAutoSelected) {
+    cleanup()
+  } else {
+    selectedElement = null
+    currentMode = 'picking'
+    render()
+  }
 }
 
 const render = () => {
