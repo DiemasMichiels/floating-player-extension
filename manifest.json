@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "name": "Floating Player",
   "description": "Float any video player on the page",
   "icons": {
