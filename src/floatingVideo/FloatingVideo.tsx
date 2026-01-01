@@ -126,12 +126,17 @@ export const FloatingVideo = ({
     }
   }, [videoElement])
 
+  const handleOrientationChange = useCallback((vertical: boolean) => {
+    setIsVertical(vertical)
+    draggableRef.current?.setVertical(vertical)
+  }, [])
+
   return (
     <DraggableWrapper
       ref={draggableRef}
-      storageKey='floating-video-position'
+      storageKey={`floating-video-${window.location.hostname}`}
       showResizeHandle={showControls}
-      isVerticalAspectRatio={isVertical}
+      onVerticalChange={setIsVertical}
     >
       <div
         ref={videoContainerRef}
@@ -159,7 +164,7 @@ export const FloatingVideo = ({
           )
         }
         isVertical={isVertical}
-        onOrientationChange={setIsVertical}
+        onOrientationChange={handleOrientationChange}
         containerWidth={containerWidth}
       />
     </DraggableWrapper>

@@ -30,11 +30,14 @@ type DraggableWrapperProps = {
   defaultWidth?: number
   resizable?: boolean
   showResizeHandle?: boolean
-  isVerticalAspectRatio: boolean
+  defaultVertical?: boolean
+  onVerticalChange?: (isVertical: boolean) => void
 }
 
 export interface DraggableWrapperRef {
   setSize: (width: number, height?: number, isVertical?: boolean) => void
+  setVertical: (isVertical: boolean) => void
+  isVertical: boolean
 }
 
 export const DraggableWrapper = forwardRef<
@@ -49,7 +52,8 @@ export const DraggableWrapper = forwardRef<
       defaultWidth = 640,
       resizable = true,
       showResizeHandle = true,
-      isVerticalAspectRatio,
+      defaultVertical = false,
+      onVerticalChange,
     },
     ref,
   ) => {
@@ -61,6 +65,7 @@ export const DraggableWrapper = forwardRef<
       width: defaultWidth,
       height: defaultWidth * (9 / 16),
     })
+    const [isVertical, setIsVertical] = useState(defaultVertical)
     const [isResizing, setIsResizing] = useState(false)
     const draggableRef = useRef<HTMLDivElement>(null)
     const resizeRef = useRef<{
@@ -70,31 +75,32 @@ export const DraggableWrapper = forwardRef<
       startHeight: number
     } | null>(null)
 
-    const getAspectRatio = useCallback((isVertical: boolean) => {
-      return isVertical ? 16 / 9 : 9 / 16
+    const getAspectRatio = useCallback((vertical: boolean) => {
+      return vertical ? 16 / 9 : 9 / 16
     }, [])
 
     const calculateHeight = useCallback(
-      (currentWidth: number, isVertical: boolean) => {
-        return currentWidth * getAspectRatio(isVertical)
+      (currentWidth: number, vertical: boolean) => {
+        return currentWidth * getAspectRatio(vertical)
       },
       [getAspectRatio],
     )
 
     const calculateWidth = useCallback(
-      (currentHeight: number, isVertical: boolean) => {
-        return currentHeight / getAspectRatio(isVertical)
+      (currentHeight: number, vertical: boolean) => {
+        return currentHeight / getAspectRatio(vertical)
       },
       [getAspectRatio],
     )
 
     const saveState = useCallback(
-      async (position: Position, currentSize: Size) => {
+      async (position: Position, currentSize: Size, vertical: boolean) => {
         try {
           if (typeof chrome !== 'undefined' && chrome.storage) {
             await chrome.storage.local.set({
               [storageKey]: position,
               [`${storageKey}_size`]: currentSize,
+              [`${storageKey}_vertical`]: vertical,
             })
           }
         } catch (error) {
@@ -104,11 +110,31 @@ export const DraggableWrapper = forwardRef<
       [storageKey],
     )
 
+    const updateVertical = useCallback(
+      (vertical: boolean) => {
+        setIsVertical(vertical)
+        onVerticalChange?.(vertical)
+
+        // Recalculate size for new orientation
+        setSize((prevSize) => {
+          const newHeight = calculateHeight(prevSize.width, vertical)
+          return { width: prevSize.width, height: newHeight }
+        })
+
+        // Save immediately
+        setSize((currentSize) => {
+          saveState(controlledPosition, currentSize, vertical)
+          return currentSize
+        })
+      },
+      [onVerticalChange, calculateHeight, controlledPosition, saveState],
+    )
+
     useImperativeHandle(ref, () => ({
       setSize: (
         width: number,
         height?: number,
-        isVerticalParam: boolean = isVerticalAspectRatio,
+        isVerticalParam: boolean = isVertical,
       ) => {
         setSize((prevSize) => {
           let newWidth = Math.max(320, width)
@@ -131,11 +157,15 @@ export const DraggableWrapper = forwardRef<
 
           if (prevSize.width !== newWidth || prevSize.height !== newHeight) {
             const updatedSize = { width: newWidth, height: newHeight }
-            saveState(controlledPosition, updatedSize)
+            saveState(controlledPosition, updatedSize, isVertical)
             return updatedSize
           }
           return prevSize
         })
+      },
+      setVertical: updateVertical,
+      get isVertical() {
+        return isVertical
       },
     }))
 
@@ -146,10 +176,9 @@ export const DraggableWrapper = forwardRef<
             console.warn(
               'chrome.storage is not available. Skipping state loading.',
             )
-            // Initialize with default values if storage is not available
             setSize({
               width: defaultWidth,
-              height: calculateHeight(defaultWidth, isVerticalAspectRatio),
+              height: calculateHeight(defaultWidth, defaultVertical),
             })
             return
           }
@@ -157,9 +186,16 @@ export const DraggableWrapper = forwardRef<
           const storage = await chrome.storage.local.get([
             storageKey,
             `${storageKey}_size`,
+            `${storageKey}_vertical`,
           ])
           const savedPosition = storage[storageKey]
           const savedSize = storage[`${storageKey}_size`]
+          const savedVertical = storage[`${storageKey}_vertical`]
+
+          // Load vertical first
+          const vertical = savedVertical ?? defaultVertical
+          setIsVertical(vertical)
+          onVerticalChange?.(vertical)
 
           if (
             savedPosition &&
@@ -174,15 +210,12 @@ export const DraggableWrapper = forwardRef<
             typeof savedSize.width === 'number' &&
             typeof savedSize.height === 'number'
           ) {
-            const adjustedHeight = calculateHeight(
-              savedSize.width,
-              isVerticalAspectRatio,
-            )
+            const adjustedHeight = calculateHeight(savedSize.width, vertical)
             setSize({ width: savedSize.width, height: adjustedHeight })
           } else {
             setSize({
               width: defaultWidth,
-              height: calculateHeight(defaultWidth, isVerticalAspectRatio),
+              height: calculateHeight(defaultWidth, vertical),
             })
           }
         } catch (error) {
@@ -191,7 +224,13 @@ export const DraggableWrapper = forwardRef<
       }
 
       loadSavedState()
-    }, [storageKey, defaultWidth, isVerticalAspectRatio, calculateHeight])
+    }, [
+      storageKey,
+      defaultWidth,
+      defaultVertical,
+      calculateHeight,
+      onVerticalChange,
+    ])
 
     const handleMouseDownResize = useCallback(
       (e: React.MouseEvent | React.TouchEvent) => {
@@ -225,24 +264,23 @@ export const DraggableWrapper = forwardRef<
         const deltaX = x - resizeRef.current.startX
         const deltaY = y - resizeRef.current.startY
 
-        // Use the larger delta to maintain aspect ratio
-        const currentAspectRatio = getAspectRatio(isVerticalAspectRatio)
+        const currentAspectRatio = getAspectRatio(isVertical)
         const delta = Math.max(deltaX, deltaY / currentAspectRatio)
 
         let newWidth = Math.max(320, resizeRef.current.startWidth + delta)
-        let newHeight = calculateHeight(newWidth, isVerticalAspectRatio)
+        let newHeight = calculateHeight(newWidth, isVertical)
 
         const viewportWidth = window.innerWidth
         const viewportHeight = window.innerHeight
 
         if (newWidth > viewportWidth) {
           newWidth = viewportWidth
-          newHeight = calculateHeight(newWidth, isVerticalAspectRatio)
+          newHeight = calculateHeight(newWidth, isVertical)
         }
 
         if (newHeight > viewportHeight) {
           newHeight = viewportHeight
-          newWidth = calculateWidth(newHeight, isVerticalAspectRatio)
+          newWidth = calculateWidth(newHeight, isVertical)
         }
 
         setSize((prevSize) => {
@@ -256,7 +294,7 @@ export const DraggableWrapper = forwardRef<
       const handleMouseUp = () => {
         setIsResizing(false)
         resizeRef.current = null
-        saveState(controlledPosition, size)
+        saveState(controlledPosition, size, isVertical)
       }
 
       document.addEventListener('mousemove', handleMouseMove)
@@ -275,7 +313,7 @@ export const DraggableWrapper = forwardRef<
       controlledPosition,
       size,
       saveState,
-      isVerticalAspectRatio,
+      isVertical,
       calculateHeight,
       calculateWidth,
       getAspectRatio,
@@ -295,10 +333,9 @@ export const DraggableWrapper = forwardRef<
 
           const currentCalculatedHeight = calculateHeight(
             currentSize.width,
-            isVerticalAspectRatio,
+            isVertical,
           )
 
-          // Check if height needs adjustment based on current width and aspect ratio
           if (
             Math.abs(currentSize.height - currentCalculatedHeight) > 1 ||
             currentSize.width === defaultWidth
@@ -307,30 +344,21 @@ export const DraggableWrapper = forwardRef<
             needsUpdate = true
           }
 
-          // Get available viewport dimensions (excluding scrollbars)
           const viewportWidth = document.documentElement.clientWidth
           const viewportHeight = document.documentElement.clientHeight
 
-          // Check if size needs to be reduced
           if (currentSize.width > viewportWidth) {
             currentSize.width = viewportWidth
-            currentSize.height = calculateHeight(
-              currentSize.width,
-              isVerticalAspectRatio,
-            )
+            currentSize.height = calculateHeight(currentSize.width, isVertical)
             needsUpdate = true
           }
 
           if (currentSize.height > viewportHeight) {
             currentSize.height = viewportHeight
-            currentSize.width = calculateWidth(
-              currentSize.height,
-              isVerticalAspectRatio,
-            )
+            currentSize.width = calculateWidth(currentSize.height, isVertical)
             needsUpdate = true
           }
 
-          // Check if position needs adjustment to stay within viewport
           if (currentPosition.x + currentSize.width > viewportWidth) {
             currentPosition.x = Math.max(0, viewportWidth - currentSize.width)
             needsUpdate = true
@@ -352,7 +380,7 @@ export const DraggableWrapper = forwardRef<
           if (needsUpdate) {
             setControlledPosition(currentPosition)
             setSize(currentSize)
-            saveState(currentPosition, currentSize)
+            saveState(currentPosition, currentSize, isVertical)
           }
         }, 100)
       }
@@ -371,7 +399,7 @@ export const DraggableWrapper = forwardRef<
       controlledPosition,
       size,
       saveState,
-      isVerticalAspectRatio,
+      isVertical,
       calculateHeight,
       calculateWidth,
       defaultWidth,
@@ -386,7 +414,7 @@ export const DraggableWrapper = forwardRef<
         disabled={isResizing}
         onStop={(_, position) => {
           setControlledPosition({ x: position.x, y: position.y })
-          saveState(position, size)
+          saveState(position, size, isVertical)
         }}
         onDrag={(_, position) => {
           setControlledPosition({ x: position.x, y: position.y })
