@@ -1,35 +1,91 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { VideoPage } from './src/VideoPage'
+import { VideoPicker } from './src/videoPicker/VideoPicker'
 
-let mounted = false
+type MediaElement = HTMLVideoElement | HTMLIFrameElement
 
-const mountFloatingPlayer = () => {
-  if (mounted || document.getElementById('float-video-root')) return
+let rootElement: HTMLDivElement | null = null
+let reactRoot: ReactDOM.Root | null = null
+let currentMode: 'idle' | 'picking' | 'floating' = 'idle'
+let selectedElement: MediaElement | null = null
 
-  const root = document.createElement('div')
-  root.id = 'float-video-root'
-  root.style.cssText = `
+const notifyStateChange = (isActive: boolean) => {
+  chrome.runtime.sendMessage({ type: 'STATE_CHANGED', isActive })
+}
+
+const createRoot = () => {
+  if (rootElement) return
+
+  rootElement = document.createElement('div')
+  rootElement.id = 'float-video-root'
+  rootElement.style.cssText = `
     position: fixed;
     inset: 0;
     z-index: 2147483647;
     pointer-events: none;
   `
-
-  document.body.appendChild(root)
-
-  ReactDOM.createRoot(root).render(
-    <StrictMode>
-      <VideoPage />
-    </StrictMode>,
-  )
-
-  mounted = true
+  document.body.appendChild(rootElement)
+  reactRoot = ReactDOM.createRoot(rootElement)
 }
 
-// Listen for float video message from background
+const cleanup = () => {
+  if (reactRoot) {
+    reactRoot.unmount()
+    reactRoot = null
+  }
+  if (rootElement) {
+    rootElement.remove()
+    rootElement = null
+  }
+  currentMode = 'idle'
+  selectedElement = null
+  notifyStateChange(false)
+}
+
+const handleSelect = (element: MediaElement) => {
+  selectedElement = element
+  currentMode = 'floating'
+  render()
+}
+
+const handleClose = () => {
+  selectedElement = null
+  currentMode = 'picking'
+  render()
+}
+
+const render = () => {
+  if (!reactRoot) return
+
+  if (currentMode === 'picking') {
+    reactRoot.render(
+      <StrictMode>
+        <VideoPicker onSelect={handleSelect} />
+      </StrictMode>
+    )
+  } else if (currentMode === 'floating' && selectedElement) {
+    reactRoot.render(
+      <StrictMode>
+        <VideoPage selectedElement={selectedElement} onClose={handleClose} />
+      </StrictMode>
+    )
+  }
+}
+
+const toggleFloatingPlayer = () => {
+  if (currentMode === 'idle') {
+    createRoot()
+    currentMode = 'picking'
+    render()
+    notifyStateChange(true)
+  } else {
+    cleanup()
+  }
+}
+
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'FLOAT_VIDEO') {
-    mountFloatingPlayer()
+    toggleFloatingPlayer()
   }
 })

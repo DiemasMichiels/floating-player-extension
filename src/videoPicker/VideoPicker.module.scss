@@ -1,0 +1,36 @@
+.pickerIcon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: rgba(35, 45, 60, 0.9);
+  border: 1px solid rgba(70, 90, 120, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s ease;
+  z-index: 2147483646;
+  pointer-events: auto;
+
+  &:hover {
+    background: rgba(35, 45, 60, 1);
+    border-color: rgba(100, 130, 170, 0.9);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.pickerOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483646;
+}

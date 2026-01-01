@@ -1,46 +1,28 @@
-import { useEffect } from 'react'
 import { FloatingVideo } from '@/floatingVideo/FloatingVideo'
-import { useVideoStore } from '@/useVideoStore'
 import styles from './VideoPage.module.scss'
 import { FloatingIframe } from './floatingIframe/FloatingIframe'
 
-export const VideoPage = () => {
-  const videoElement = useVideoStore((state) => state.videoElement)
-  const searchForVideo = useVideoStore((state) => state.searchForVideo)
+type MediaElement = HTMLVideoElement | HTMLIFrameElement
 
-  useEffect(() => {
-    if (!videoElement) {
-      searchForVideo()
-    }
-  }, [videoElement, searchForVideo])
+type VideoPageProps = {
+  selectedElement: MediaElement
+  onClose: () => void
+}
 
-  // Find iframe only if no video element exists
-  const iframeElement =
-    !videoElement &&
-    document.querySelectorAll('iframe').length > 0 &&
-    Array.from(document.querySelectorAll('iframe')).find((iframe) => {
-      const src = iframe.src.toLowerCase()
-      return (
-        src.includes('player') ||
-        src.includes('embed') ||
-        src.includes('video') ||
-        src.includes('mediadelivery') ||
-        iframe.allowFullscreen
-      )
-    })
+export const VideoPage = ({ selectedElement, onClose }: VideoPageProps) => {
+  const isVideo = selectedElement instanceof HTMLVideoElement
+  const isIframe = selectedElement instanceof HTMLIFrameElement
 
-  const hasVideoIframes = !!iframeElement
-
-  if (!videoElement && !hasVideoIframes) {
+  if (!isVideo && !isIframe) {
     return null
   }
 
   return (
     <div className={styles.videoPage}>
-      {videoElement ? (
-        <FloatingVideo videoElement={videoElement} />
+      {isVideo ? (
+        <FloatingVideo videoElement={selectedElement} onClose={onClose} />
       ) : (
-        hasVideoIframes && <FloatingIframe iframeElement={iframeElement} />
+        <FloatingIframe iframeElement={selectedElement} onClose={onClose} />
       )}
     </div>
   )

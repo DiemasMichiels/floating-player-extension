@@ -7,6 +7,8 @@ import {
   IconMaximize,
   IconX,
   IconGripHorizontal,
+  IconRewindBackward10,
+  IconRewindForward30,
 } from '@tabler/icons-react'
 import clsx from 'clsx'
 import { useState, useCallback, useEffect } from 'react'
@@ -98,7 +100,7 @@ export const Controls = ({
       videoElement.volume = newVolume
       setLocalVolume(newVolume)
     }
-  }, [localVolume, volume])
+  }, [localVolume, videoElement])
 
   const handleTimeSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,6 +146,17 @@ export const Controls = ({
     }
   }, [videoElement])
 
+  const handleSkip = useCallback(
+    (seconds: number) => {
+      if (!videoElement || isLiveContent) return
+      videoElement.currentTime = Math.max(
+        0,
+        Math.min(videoElement.duration, videoElement.currentTime + seconds),
+      )
+    },
+    [videoElement, isLiveContent],
+  )
+
   const handleSpeedChange = useCallback(
     (speed: number) => {
       if (!videoElement) return
@@ -173,6 +186,18 @@ export const Controls = ({
           e.preventDefault()
           handlePlayPause()
           break
+        case 'ArrowLeft':
+          if (!isLiveContent) {
+            e.preventDefault()
+            handleSkip(-10)
+          }
+          break
+        case 'ArrowRight':
+          if (!isLiveContent) {
+            e.preventDefault()
+            handleSkip(30)
+          }
+          break
         case 'KeyM':
           e.preventDefault()
           handleMuteToggle()
@@ -189,7 +214,7 @@ export const Controls = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handlePlayPause, handleMuteToggle, handleFullscreen])
+  }, [isLiveContent, handlePlayPause, handleSkip, handleMuteToggle, handleFullscreen])
 
   return (
     <div
@@ -230,6 +255,26 @@ export const Controls = ({
               <IconPlayerPlay size={16} />
             )}
           </button>
+
+          {!isLiveContent && !isCompact && (
+            <>
+              <button
+                className={styles.controlButton}
+                onClick={() => handleSkip(-10)}
+                aria-label='Skip back 10 seconds'
+              >
+                <IconRewindBackward10 size={16} />
+              </button>
+
+              <button
+                className={styles.controlButton}
+                onClick={() => handleSkip(30)}
+                aria-label='Skip forward 30 seconds'
+              >
+                <IconRewindForward30 size={16} />
+              </button>
+            </>
+          )}
 
           {!isLiveContent && (
             <div className={styles.timeDisplay}>

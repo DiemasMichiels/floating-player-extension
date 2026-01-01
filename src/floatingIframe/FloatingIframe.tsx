@@ -3,15 +3,15 @@ import {
   DraggableWrapper,
   DraggableWrapperRef,
 } from '@/draggableWrapper/DraggableWrapper'
-import { useVideoStore } from '@/useVideoStore'
 import { IframeControls } from '../controls/IframeControls'
 import styles from './FloatingIframe.module.scss'
 
 type FloatingIframeProps = {
-  iframeElement: HTMLIFrameElement | null
+  iframeElement: HTMLIFrameElement
+  onClose: () => void
 }
 
-export const FloatingIframe = ({ iframeElement }: FloatingIframeProps) => {
+export const FloatingIframe = ({ iframeElement, onClose }: FloatingIframeProps) => {
   const iframeContainerRef = useRef<HTMLDivElement>(null)
   const draggableRef = useRef<DraggableWrapperRef>(null)
   const originalIframeRef = useRef<{
@@ -20,52 +20,48 @@ export const FloatingIframe = ({ iframeElement }: FloatingIframeProps) => {
     nextSibling: Node | null
   } | null>(null)
 
-  const setIsFloating = useVideoStore((state) => state.setIsFloating)
-
   // Move iframe to floating window
   useEffect(() => {
-    if (iframeContainerRef.current) {
-      if (iframeElement && iframeElement.parentElement) {
-        // Store original position
-        const parentInfo = {
-          iframe: iframeElement,
-          parent: iframeElement.parentElement,
-          nextSibling: iframeElement.nextSibling,
+    if (iframeContainerRef.current && iframeElement.parentElement) {
+      const parentInfo = {
+        iframe: iframeElement,
+        parent: iframeElement.parentElement,
+        nextSibling: iframeElement.nextSibling,
+      }
+      originalIframeRef.current = parentInfo
+
+      iframeElement.style.width = '100%'
+      iframeElement.style.height = '100%'
+      iframeElement.style.border = 'none'
+
+      iframeContainerRef.current.appendChild(iframeElement)
+
+      return () => {
+        if (parentInfo.nextSibling) {
+          parentInfo.parent.insertBefore(iframeElement, parentInfo.nextSibling)
+        } else {
+          parentInfo.parent.appendChild(iframeElement)
         }
-        originalIframeRef.current = parentInfo
-
-        // Move the actual iframe to floating window
-        iframeElement.style.width = '100%'
-        iframeElement.style.height = '100%'
-        iframeElement.style.border = 'none'
-
-        iframeContainerRef.current.appendChild(iframeElement)
-
-        return () => {
-          // Restore iframe to original position on cleanup
-          if (parentInfo.nextSibling) {
-            parentInfo.parent.insertBefore(
-              iframeElement,
-              parentInfo.nextSibling,
-            )
-          } else {
-            parentInfo.parent.appendChild(iframeElement)
-          }
-          // Reset iframe styles
-          iframeElement.style.width = ''
-          iframeElement.style.height = ''
-          iframeElement.style.border = ''
-        }
+        iframeElement.style.width = ''
+        iframeElement.style.height = ''
+        iframeElement.style.border = ''
       }
     }
   }, [iframeElement])
 
   const handleClose = () => {
-    // Restore original iframe
     if (originalIframeRef.current) {
-      originalIframeRef.current.iframe.style.display = ''
+      const { iframe, parent, nextSibling } = originalIframeRef.current
+      iframe.style.width = ''
+      iframe.style.height = ''
+      iframe.style.border = ''
+      if (nextSibling) {
+        parent.insertBefore(iframe, nextSibling)
+      } else {
+        parent.appendChild(iframe)
+      }
     }
-    setIsFloating(false)
+    onClose()
   }
 
   return (
@@ -86,8 +82,6 @@ export const FloatingIframe = ({ iframeElement }: FloatingIframeProps) => {
           draggableRef.current?.setSize(window.innerWidth, window.innerHeight)
         }
         onFullscreen={() => {
-          if (!iframeElement) return
-
           if (document.fullscreenElement) {
             document.exitFullscreen()
           } else {

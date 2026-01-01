@@ -12,9 +12,10 @@ import styles from './FloatingVideo.module.scss'
 
 type FloatingVideoProps = {
   videoElement: HTMLVideoElement
+  onClose: () => void
 }
 
-export const FloatingVideo = ({ videoElement }: FloatingVideoProps) => {
+export const FloatingVideo = ({ videoElement, onClose }: FloatingVideoProps) => {
   const [showControls, setShowControls] = useState(true)
   const [isVertical, setIsVertical] = useState(false)
   const [containerWidth, setContainerWidth] = useState<number | undefined>()
@@ -23,55 +24,50 @@ export const FloatingVideo = ({ videoElement }: FloatingVideoProps) => {
   const draggableRef = useRef<DraggableWrapperRef>(null)
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Use the video listener hook to sync state
   useVideoListener(videoElement)
 
-  const { isBuffering, isPlaying } = useVideoStore(
+  const { isBuffering, isPlaying, setVideoElement } = useVideoStore(
     useShallow((state) => ({
       isBuffering: state.isBuffering,
       isPlaying: state.isPlaying,
+      setVideoElement: state.setVideoElement,
     })),
   )
 
-  const [originalParent, setOriginalParent] = useState<{
-    parent: Element
-    nextSibling: Node | null
-  } | null>(null)
+  // Set video element in store so Controls can access it
+  useEffect(() => {
+    setVideoElement(videoElement)
+    return () => setVideoElement(null)
+  }, [videoElement, setVideoElement])
 
+  // Resize observer for container width
   useEffect(() => {
     if (!videoContainerRef.current) return
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const width = entry.contentRect.width
-        setContainerWidth(width)
+        setContainerWidth(entry.contentRect.width)
       }
     })
 
     resizeObserver.observe(videoContainerRef.current)
-
-    return () => {
-      resizeObserver.disconnect()
-    }
+    return () => resizeObserver.disconnect()
   }, [])
 
-  // Move video element to floating window
+  // Move video element to floating window, restore on unmount
   useEffect(() => {
-    if (videoContainerRef.current && videoElement.parentElement) {
-      const parentInfo = {
-        parent: videoElement.parentElement,
-        nextSibling: videoElement.nextSibling,
-      }
-      setOriginalParent(parentInfo)
+    if (!videoContainerRef.current || !videoElement.parentElement) return
 
-      videoContainerRef.current.appendChild(videoElement)
+    const originalParent = videoElement.parentElement
+    const originalNextSibling = videoElement.nextSibling
 
-      return () => {
-        if (parentInfo.nextSibling) {
-          parentInfo.parent.insertBefore(videoElement, parentInfo.nextSibling)
-        } else {
-          parentInfo.parent.appendChild(videoElement)
-        }
+    videoContainerRef.current.appendChild(videoElement)
+
+    return () => {
+      if (originalNextSibling) {
+        originalParent.insertBefore(videoElement, originalNextSibling)
+      } else {
+        originalParent.appendChild(videoElement)
       }
     }
   }, [videoElement])
@@ -102,33 +98,12 @@ export const FloatingVideo = ({ videoElement }: FloatingVideoProps) => {
   }, [isPlaying, resetHideTimer])
 
   const handleVideoClick = useCallback(() => {
-    if (!videoElement) return
-
     if (videoElement.paused) {
       videoElement.play()
     } else {
       videoElement.pause()
     }
   }, [videoElement])
-
-  const handleClose = () => {
-    if (originalParent) {
-      if (originalParent.nextSibling) {
-        originalParent.parent.insertBefore(
-          videoElement,
-          originalParent.nextSibling,
-        )
-      } else {
-        originalParent.parent.appendChild(videoElement)
-      }
-    }
-
-    // Remove the root element
-    const root = document.getElementById('float-video-root')
-    if (root) {
-      root.remove()
-    }
-  }
 
   return (
     <DraggableWrapper
@@ -154,7 +129,7 @@ export const FloatingVideo = ({ videoElement }: FloatingVideoProps) => {
       </div>
       <Controls
         show={showControls}
-        onClose={handleClose}
+        onClose={onClose}
         onTheaterMode={() =>
           draggableRef.current?.setSize(
             window.innerWidth,
