@@ -15,7 +15,10 @@ type FloatingVideoProps = {
   onClose: () => void
 }
 
-export const FloatingVideo = ({ videoElement, onClose }: FloatingVideoProps) => {
+export const FloatingVideo = ({
+  videoElement,
+  onClose,
+}: FloatingVideoProps) => {
   const [showControls, setShowControls] = useState(true)
   const [isVertical, setIsVertical] = useState(false)
   const [containerWidth, setContainerWidth] = useState<number | undefined>()
@@ -54,16 +57,34 @@ export const FloatingVideo = ({ videoElement, onClose }: FloatingVideoProps) => 
     return () => resizeObserver.disconnect()
   }, [])
 
-  // Move video element to floating window, restore on unmount
+  // Move video element to floating window, leave placeholder behind
   useEffect(() => {
     if (!videoContainerRef.current || !videoElement.parentElement) return
 
     const originalParent = videoElement.parentElement
     const originalNextSibling = videoElement.nextSibling
 
+    // Create a real video element as placeholder, copy all attributes and styles
+    const placeholder = document.createElement('video')
+    placeholder.dataset.floatingPlayerPlaceholder = 'true'
+
+    // Copy attributes
+    for (const attr of videoElement.attributes) {
+      if (attr.name !== 'src' && attr.name !== 'srcset') {
+        placeholder.setAttribute(attr.name, attr.value)
+      }
+    }
+
+    // Copy computed styles
+    const computedStyle = window.getComputedStyle(videoElement)
+    placeholder.style.cssText = computedStyle.cssText
+
+    // Insert placeholder and move video
+    originalParent.insertBefore(placeholder, videoElement)
     videoContainerRef.current.appendChild(videoElement)
 
     return () => {
+      placeholder.remove()
       if (originalNextSibling) {
         originalParent.insertBefore(videoElement, originalNextSibling)
       } else {
